@@ -14,7 +14,6 @@ import Foundation
 public func putData(on card:TKSmartCard, extendedHeaderList:Bool = false, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Bool {
 	let apdu = APDU(cla: 0x00, ins: extendedHeaderList ? 0xDB : 0xDA, p1: P1, p2: P2, data: lcData, le: le)
 	
-	print(apdu.serialize().map { String(format: "%02X", $0) }.joined())
 	let response = try await card.transmit(apdu.serialize())
 	guard response.suffix(2) == Data([0x90, 0x00]) else { return false }
 	return true

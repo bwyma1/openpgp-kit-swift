@@ -23,7 +23,8 @@ struct Testing {
 	static func main() async throws {
 		let logger = Logger(label: "OpenPGPTests")
 		
-		let openPGPConnection = try await OpenPGPConnection(logLevel: .trace)
+		let openPGPConnection = OpenPGPConnection(logLevel: .trace)
+		try await openPGPConnection.waitForYubikey(retryTime: .seconds(0.5))
 		try await openPGPConnection.startOpenPGP()
 		
 		let data = EncodedString(stringLiteral: "Raw Data")

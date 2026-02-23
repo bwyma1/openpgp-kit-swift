@@ -11,7 +11,7 @@ let package = Package(
 	products: [
 		// Products define the executables and libraries a package produces, making them visible to other packages.
 		.executable(name:"openpgp-tests", targets:["openpgp-tests"]),
-		.library(name: "openpgp-kit-swift", targets: ["openpgp-kit-swift"]),
+		.library(name: "openpgp-kit", targets: ["openpgp-kit-swift"]),
 	],
 	dependencies:[
 		.package(url:"https://github.com/tannerdsilva/rawdog.git", revision: "1c4966c72102fc01b169cbc18ee5f0be10d802de"),
