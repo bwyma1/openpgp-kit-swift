@@ -21,12 +21,14 @@ public enum VerifyAction {
 /// If the command is called without data, the actual access status of the addressed password is returned or the access status is set to 'not verified'.
 ///
 /// Returns a Bool indicating the success of the command.
-public func verify(on card:TKSmartCard, pwType:VerifyPWType, action:VerifyAction, password:Data?) async throws -> Bool {
-	let P1:UInt8 = action == .startVerify ? 0x00 : 0xFF
-	let P2:UInt8 = pwType == .user ? 0x81 : 0x83
-	let apdu = APDU(cla: 0x00, ins: 0x20, p1: P1, p2: P2, data: password, le: nil)
-	
-	let response = try await card.transmit(apdu.serialize())
-	guard response.suffix(2) == Data([0x90, 0x00]) else { return false }
-	return true
+extension OpenPGPConnection {
+	public func verify(on card:TKSmartCard, pwType:VerifyPWType, action:VerifyAction, password:Data?) async throws -> Bool {
+		let P1:UInt8 = action == .startVerify ? 0x00 : 0xFF
+		let P2:UInt8 = pwType == .user ? 0x81 : 0x83
+		let apdu = APDU(cla: 0x00, ins: 0x20, p1: P1, p2: P2, data: password, le: nil)
+		
+		let response = try await card.transmit(apdu.serialize())
+		guard response.suffix(2) == Data([0x90, 0x00]) else { return false }
+		return true
+	}
 }

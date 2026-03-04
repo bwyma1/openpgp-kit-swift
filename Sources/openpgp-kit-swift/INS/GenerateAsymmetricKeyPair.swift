@@ -31,18 +31,20 @@ public enum KeyPairParameter {
 /// - The public key created from the key generation.
 /// - The public key(s) returned from reading the key.
 /// - Nil for unsuccessful generation or fetch.
-public func generateAsymmetricKeyPair(on card:TKSmartCard, action: KeyPairParameter, crt: KeyPairCRT) async throws -> [PublicKey]? {
-	let P1: UInt8 = action == .generate ? 0x80 : 0x81
-	switch crt {
-		case .digitalSignature:
-			let apdu = APDU(cla: 0x00, ins: 0x47, p1: P1, p2: 0x00, data: Data([0xB6, 0x00]), le: nil)
-			
-			let response = try await card.transmit(apdu.serialize())
-			let keys = extractEd25519Keys(from: response)
-			return keys
-		default:
-			// Don't have them all implemented yet.
-			fatalError("Unsupported CRT: \(crt)")
+extension OpenPGPConnection {
+	public func generateAsymmetricKeyPair(on card:TKSmartCard, action: KeyPairParameter, crt: KeyPairCRT) async throws -> [PublicKey]? {
+		let P1: UInt8 = action == .generate ? 0x80 : 0x81
+		switch crt {
+			case .digitalSignature:
+				let apdu = APDU(cla: 0x00, ins: 0x47, p1: P1, p2: 0x00, data: Data([0xB6, 0x00]), le: nil)
+				
+				let response = try await card.transmit(apdu.serialize())
+				let keys = extractEd25519Keys(from: response)
+				return keys
+			default:
+				// Don't have them all implemented yet.
+				fatalError("Unsupported CRT: \(crt)")
+		}
 	}
 }
 

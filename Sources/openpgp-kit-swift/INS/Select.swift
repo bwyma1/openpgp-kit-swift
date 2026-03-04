@@ -15,9 +15,11 @@ import Foundation
 /// The command sets all private keys (Key-Ref) to their default bindings.
 ///
 /// Returns a Bool indicating whether or not the OpenPGP Application was successfully selected.
-public func selectOpenPGP(on card:TKSmartCard) async throws -> Bool {
-	let apdu = APDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: Data([0xD2, 0x76, 0x00, 0x01, 0x24, 0x01]), le: nil)
-
-	let response = try await card.transmit(apdu.serialize())
-	return response == Data([0x90, 0x00])
+extension OpenPGPConnection {
+	public func selectOpenPGP(on card:TKSmartCard) async throws -> Bool {
+		let apdu = APDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: Data([0xD2, 0x76, 0x00, 0x01, 0x24, 0x01]), le: nil)
+		
+		let response = try await card.transmit(apdu.serialize())
+		return response == Data([0x90, 0x00])
+	}
 }

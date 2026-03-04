@@ -14,15 +14,17 @@ import RAW
 /// The command always use the SIG-key (Key-Ref 1).
 ///
 /// Returns the 64-byte hash from signing the message on status success (9000), else throws corresponding error.
-public func computeDigitalSignature<DataType:RAW_accessible>(on card:TKSmartCard, hashedData:DataType) async throws -> Data {
-	var data = Data()
-	hashedData.RAW_access { ptr in
-		data.append(contentsOf: ptr)
+extension OpenPGPConnection {
+	public func computeDigitalSignature<DataType:RAW_accessible>(on card:TKSmartCard, hashedData:DataType) async throws -> Data {
+		var data = Data()
+		hashedData.RAW_access { ptr in
+			data.append(contentsOf: ptr)
+		}
+		let apdu = APDU(cla: 0x00, ins: 0x2A, p1: 0x9E, p2: 0x9A, data: data, le: nil)
+		let response = try await card.transmit(apdu.serialize())
+		guard response.suffix(2) == Data([0x90, 0x00]) else {
+			throw OpenPGPError.failedToSignData
+		}
+		return response.dropLast(2)
 	}
-	let apdu = APDU(cla: 0x00, ins: 0x2A, p1: 0x9E, p2: 0x9A, data: data, le: nil)
-	let response = try await card.transmit(apdu.serialize())
-	guard response.suffix(2) == Data([0x90, 0x00]) else {
-		throw OpenPGPError.failedToSignData
-	}
-	return response.dropLast(2)
 }

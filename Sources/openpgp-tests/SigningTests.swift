@@ -92,7 +92,7 @@ struct Testing {
 		let key = try await openPGPConnection.getPublicKeys()[0]
 		logger.info("Test Passed: Read the public key ✅ \(String(RAW_base64.encode(key)))")
 		try await openPGPConnection.openVerifyAccess(pwType: .user, password: "123456".data(using: .utf8)!)
-		var signature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
+		let signature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
 		
 		signature.withUnsafeBytes { sigPtr in
 			id.RAW_access { idPtr in

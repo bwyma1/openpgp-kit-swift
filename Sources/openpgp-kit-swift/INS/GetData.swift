@@ -13,12 +13,14 @@ import Foundation
 /// concatenation of the following DOs (L = Length): 5B L Name 5F2D L Language Preferences 5F35 L Sex).
 ///
 /// Returns the data response on status success (9000), else throws corresponging error.
-public func getData(on card:TKSmartCard, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Data {
-	let apdu = APDU(cla: 0x00, ins: 0xCA, p1: P1, p2: P2, data: lcData, le: le)
-	
-	let response = try await card.transmit(apdu.serialize())
-	guard response.suffix(2) == Data([0x90, 0x00]) else {
-		throw OpenPGPError.failedToGetData
+extension OpenPGPConnection {
+	public func getData(on card:TKSmartCard, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Data {
+		let apdu = APDU(cla: 0x00, ins: 0xCA, p1: P1, p2: P2, data: lcData, le: le)
+		
+		let response = try await card.transmit(apdu.serialize())
+		guard response.suffix(2) == Data([0x90, 0x00]) else {
+			throw OpenPGPError.failedToGetData
+		}
+		return response.dropLast(2)
 	}
-	return response.dropLast(2)
 }

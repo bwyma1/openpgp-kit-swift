@@ -29,9 +29,9 @@ public enum OpenPGPError: Error {
 @RAW_staticbuff(bytes: 20)
 fileprivate struct Fingerprint:Sendable, Hashable { }
 
-public class OpenPGPConnection {
+public actor OpenPGPConnection {
 	private let logger:Logger
-	var card: TKSmartCard = TKSmartCard()
+	private var card: TKSmartCard = TKSmartCard()
 	public var isConnected:Bool { card.isValid }
 	
 	/// Initializer waits until there is a Yubikey connected to try and start the connection.
@@ -39,11 +39,6 @@ public class OpenPGPConnection {
 		var makeLogger = Logger(label: "\(String(describing:Self.self))")
 		makeLogger.logLevel = logLevel
 		self.logger = makeLogger
-	}
-	
-	deinit {
-		logger.debug("De-initialising OpenPGPConnection")
-		card.endSession()
 	}
 	
 	/// Throws if no yubikey is connected or a card is not found.
