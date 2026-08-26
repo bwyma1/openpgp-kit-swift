@@ -30,7 +30,8 @@ let package = Package(
 				.product(name:"RAW_sha256", package:"rawdog"),
 				.product(name:"RAW_base64", package:"rawdog"),
 				.product(name:"RAW_ed25519", package:"rawdog"),
-			]
+			],
+			exclude: ["SmartCard.entitlements"]
         ),
         .executableTarget(
             name: "openpgp-tests",
