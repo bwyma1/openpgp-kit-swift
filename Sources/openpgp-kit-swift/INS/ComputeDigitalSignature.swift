@@ -23,6 +23,7 @@ extension OpenPGPConnection {
 		let apdu = APDU(cla: 0x00, ins: 0x2A, p1: 0x9E, p2: 0x9A, data: data, le: nil)
 		let response = try await card.transmit(apdu.serialize())
 		guard response.suffix(2) == Data([0x90, 0x00]) else {
+			logger.warning("COMPUTE DIGITAL SIGNATURE failed: card returned \(response.map { String(format: "%02X", $0) }.joined(separator: " "))")
 			throw OpenPGPError.failedToSignData
 		}
 		return response.dropLast(2)

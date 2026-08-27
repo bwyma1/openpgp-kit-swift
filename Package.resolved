@@ -1,12 +1,13 @@
 {
-  "originHash" : "ae3367e2b3e9b7b79f889557aebe81bf8a7d7fa13eb5ccdf0158e5f263a8289f",
+  "originHash" : "d466a0143b9bde8e3eebeea66294f750ea6f32a4b67dee76d8e02ab774744452",
   "pins" : [
     {
       "identity" : "rawdog",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tannerdsilva/rawdog.git",
       "state" : {
-        "revision" : "1c4966c72102fc01b169cbc18ee5f0be10d802de"
+        "revision" : "378e87e49d2cf95c92882b1bcbe21252c5c1d0a6",
+        "version" : "21.0.0"
       }
     },
     {

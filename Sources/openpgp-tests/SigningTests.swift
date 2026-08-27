@@ -96,7 +96,7 @@ struct Testing {
 		
 		signature.withUnsafeBytes { sigPtr in
 			id.RAW_access { idPtr in
-				guard Ed25519.verify(signature: sigPtr.baseAddress!, publicKey: key, message: idPtr) else {
+				guard verify(signature: sigPtr.baseAddress!.assumingMemoryBound(to: UInt8.self), publicKey: key, message: idPtr) else {
 					fatalError("Test Failed: Signature with OpenPGP generated key did not verify.")
 				}
 				logger.info("Test Passed: Signature with OpenPGP generated key verified. ✅")
@@ -112,21 +112,24 @@ struct Testing {
 			logger.info("Test Passed: Verify Access closed properly. ✅")
 		}
 		
-		//MARK: - Testing setting Ed25519 Key (wip)
-//		try await openPGPConnection.openVerifyAccess(pwType: .admin, password: "12345678".data(using: .utf8)!)
-//		let aliceStaticPrivateKey = MemoryGuarded<PrivateKey>(RAW_decode:try! RAW_base64.decode("8DFnI7tPWLl4WmuEp4T5KVuKMW6iyjRdTb3IVaDe+kI="), count:32)!
-//		let (edPubKey, edPrivKey) = try Ed25519.generateKeys(secretKey: aliceStaticPrivateKey)
-//		try await openPGPConnection.setEd25519Key(privateKey: edPrivKey, publicKey: edPubKey)
-//		signature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
-//		
-//		signature.withUnsafeBytes { sigPtr in
-//			id.RAW_access { idPtr in
-//				guard Ed25519.verify(signature: sigPtr.baseAddress!, publicKey: edPubKey, message: idPtr) else {
-//					fatalError("Test Failed: Signature with custom ed25519 key did not verify.")
-//				}
-//				logger.info("Test Passed: Signature with custom ed25519 key verified. ✅")
-//			}
-//		}
-//		try await openPGPConnection.closeVerifyAccess(pwType: .admin)
+		//MARK: - Testing setting Ed25519 Key
+		try await openPGPConnection.openVerifyAccess(pwType: .admin, password: "12345678".data(using: .utf8)!)
+		let aliceStaticPrivateKey = MemoryGuarded<RAW_dh25519.PrivateKey>(RAW_decode: try! RAW_base64.decode("8DFnI7tPWLl4WmuEp4T5KVuKMW6iyjRdTb3IVaDe+kI="), count: 32)!
+		let (edPubKey, edPrivKey) = try generateKeys(secretKey: aliceStaticPrivateKey)
+		try await openPGPConnection.setEd25519Key(privateKey: edPrivKey, publicKey: edPubKey)
+		// Key import needs PW3 (admin); signing needs PW1 (user).
+		try await openPGPConnection.openVerifyAccess(pwType: .user, password: "123456".data(using: .utf8)!)
+		let edSignature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
+		
+		edSignature.withUnsafeBytes { sigPtr in
+			id.RAW_access { idPtr in
+				guard verify(signature: sigPtr.baseAddress!.assumingMemoryBound(to: UInt8.self), publicKey: edPubKey, message: idPtr) else {
+					fatalError("Test Failed: Signature with custom ed25519 key did not verify.")
+				}
+				logger.info("Test Passed: Signature with custom ed25519 key verified. ✅")
+			}
+		}
+		try await openPGPConnection.closeVerifyAccess(pwType: .user)
+		try await openPGPConnection.closeVerifyAccess(pwType: .admin)
 	}
 }

@@ -14,7 +14,7 @@ let package = Package(
 		.library(name: "openpgp-kit", targets: ["openpgp-kit-swift"]),
 	],
 	dependencies:[
-		.package(url:"https://github.com/tannerdsilva/rawdog.git", revision: "1c4966c72102fc01b169cbc18ee5f0be10d802de"),
+		.package(url:"https://github.com/tannerdsilva/rawdog.git", "21.0.0"..<"22.0.0"),
 		.package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
 	],
     targets: [

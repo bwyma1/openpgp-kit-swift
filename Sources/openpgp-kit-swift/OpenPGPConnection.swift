@@ -30,7 +30,7 @@ public enum OpenPGPError: Error {
 fileprivate struct Fingerprint:Sendable, Hashable { }
 
 public actor OpenPGPConnection {
-	private let logger:Logger
+	let logger:Logger
 	private var card: TKSmartCard = TKSmartCard()
 	public var isConnected:Bool { card.isValid }
 	
@@ -242,20 +242,20 @@ extension OpenPGPConnection {
 
 //MARK: - Managing Keys
 extension OpenPGPConnection {
-	public func setEd25519Key(privateKey: MemoryGuarded<Ed25519.PrivateKey>, publicKey:PublicKey) async throws {
+	public func setEd25519Key(privateKey: MemoryGuarded<RAW_ed25519.PrivateKey>, publicKey:PublicKey) async throws {
 		logger.debug("Attempting to set Ed25519 key")
 		do {
 			let data = privateKey.RAW_access { ptr in
 				return publicKey.RAW_access { pubPtr in
-					var privateTLV: [UInt8] = [0x92, 0x20]
-					var publicTLV: [UInt8] = [0x99, 0x20]
-					privateTLV.append(contentsOf: Array(ptr.prefix(32)))
-					publicTLV.append(contentsOf: Array(pubPtr))
-					let innerTLV = privateTLV + publicTLV
-					var newTLV: [UInt8] = [0xB6, 0x00, 0x7F, 0x48, UInt8(innerTLV.count)]
-					newTLV.append(contentsOf: innerTLV)
-					var finalTLV: [UInt8] = [0x4D, UInt8(newTLV.count)]
-					finalTLV.append(contentsOf: newTLV)
+					let extHeaderList: [UInt8] = [0xB6, 0x00, 0x7F, 0x48, 0x02]		// 7F48 contains the bare 92 DO header (2 bytes)
+					let privateTLV: [UInt8] = [0x92, 0x20]		// signing private key DO header; ed25519 seed is 32 bytes
+					let suffixTLV: [UInt8] = [0x5F, 0x48, 0x20]	// 5F48 marker: 32 bytes of key material follow
+					let keyMaterial = Array(ptr.prefix(32))		// rawdog 64-byte key is sk||pk; card wants the 32-byte seed
+					var finalTLV: [UInt8] = [0x4D, UInt8(extHeaderList.count + privateTLV.count + suffixTLV.count + keyMaterial.count)]
+					finalTLV.append(contentsOf: extHeaderList)
+					finalTLV.append(contentsOf: privateTLV)
+					finalTLV.append(contentsOf: suffixTLV)
+					finalTLV.append(contentsOf: keyMaterial)
 					return Data(finalTLV)
 				}
 			}

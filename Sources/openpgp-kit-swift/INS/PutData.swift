@@ -16,7 +16,10 @@ extension OpenPGPConnection {
 		let apdu = APDU(cla: 0x00, ins: extendedHeaderList ? 0xDB : 0xDA, p1: P1, p2: P2, data: lcData, le: le)
 		
 		let response = try await card.transmit(apdu.serialize())
-		guard response.suffix(2) == Data([0x90, 0x00]) else { return false }
+		guard response.suffix(2) == Data([0x90, 0x00]) else {
+			logger.warning("PUT DATA failed (P1:\(String(format:"%02X", P1)) P2:\(String(format:"%02X", P2))): card returned \(response.map { String(format: "%02X", $0) }.joined(separator: " "))")
+			return false
+		}
 		return true
 	}
 }
