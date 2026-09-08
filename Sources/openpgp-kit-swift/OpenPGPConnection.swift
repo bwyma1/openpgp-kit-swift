@@ -26,9 +26,6 @@ public enum OpenPGPError: Error {
 	case failedToGetName
 }
 
-@RAW_staticbuff(bytes: 20)
-fileprivate struct Fingerprint:Sendable, Hashable { }
-
 public actor OpenPGPConnection {
 	let logger:Logger
 	private var card: TKSmartCard = TKSmartCard()
@@ -141,7 +138,7 @@ extension OpenPGPConnection {
 	private func putFingerprintAndTime(publicKey:PublicKey) async throws {
 		logger.debug("Attempting to put fingerprint")
 		do {
-			var hasher = RAW_sha1.Hasher<Fingerprint>()
+			var hasher = RAW_sha1.Hasher()
 			try hasher.update(publicKey)
 			var data = Data(count: 20)
 			try data.withUnsafeMutableBytes { ptr in
@@ -245,8 +242,8 @@ extension OpenPGPConnection {
 	public func setEd25519Key(privateKey: MemoryGuarded<RAW_ed25519.PrivateKey>, publicKey:PublicKey) async throws {
 		logger.debug("Attempting to set Ed25519 key")
 		do {
-			let data = privateKey.RAW_access { ptr in
-				return publicKey.RAW_access { pubPtr in
+			let data = privateKey.RAW_access_immutable(UnsafeRawBufferPointer.self) { ptr in
+				return publicKey.RAW_access_immutable(UnsafeRawBufferPointer.self) { pubPtr in
 					let extHeaderList: [UInt8] = [0xB6, 0x00, 0x7F, 0x48, 0x02]		// 7F48 contains the bare 92 DO header (2 bytes)
 					let privateTLV: [UInt8] = [0x92, 0x20]		// signing private key DO header; ed25519 seed is 32 bytes
 					let suffixTLV: [UInt8] = [0x5F, 0x48, 0x20]	// 5F48 marker: 32 bytes of key material follow

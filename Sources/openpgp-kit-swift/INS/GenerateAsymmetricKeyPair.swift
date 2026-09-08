@@ -140,12 +140,8 @@ func extractEd25519Keys(from response: Data) -> [PublicKey]? {
 			guard let baseAddress = rawBuffer.baseAddress else {
 				fatalError("Data has no base address")
 			}
-			// Cast to UnsafeMutablePointer<UnsafeRawPointer>
-			let ptr = UnsafeMutablePointer<UnsafeRawPointer>.allocate(capacity: 1)
-			ptr.initialize(to: baseAddress)
-			defer { ptr.deallocate() }
-
-			return PublicKey(RAW_staticbuff_seeking: ptr)
+			var ptr = baseAddress
+			return PublicKey(RAW_staticbuff_seeking: &ptr)
 		}
 		rawKeys.append(pubKey)
 	}

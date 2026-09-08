@@ -17,7 +17,7 @@ import RAW
 extension OpenPGPConnection {
 	public func computeDigitalSignature<DataType:RAW_accessible>(on card:TKSmartCard, hashedData:DataType) async throws -> Data {
 		var data = Data()
-		hashedData.RAW_access { ptr in
+		hashedData.RAW_access_immutable(UnsafeRawBufferPointer.self) { ptr in
 			data.append(contentsOf: ptr)
 		}
 		let apdu = APDU(cla: 0x00, ins: 0x2A, p1: 0x9E, p2: 0x9A, data: data, le: nil)

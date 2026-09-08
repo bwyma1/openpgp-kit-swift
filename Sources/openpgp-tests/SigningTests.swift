@@ -15,7 +15,7 @@ public struct EncodedString:Sendable, Equatable, Hashable, Comparable, Expressib
 }
 @RAW_staticbuff(bytes: 32)
 /// Testing sha256 hashed object
-public struct Test32ShaHash:Sendable, Hashable, Comparable, RAW_convertible, RAW_accessible { }
+public struct Test32ShaHash:Sendable, Hashable, Comparable, RAW_accessible { }
 
 
 @main
@@ -28,12 +28,12 @@ struct Testing {
 		try await openPGPConnection.startOpenPGP()
 		
 		let data = EncodedString(stringLiteral: "Raw Data")
-		var hasher = RAW_sha256.Hasher<Test32ShaHash>()
+		var hasher = RAW_sha256.Hasher()
 		try hasher.update(data)
-		var id = Test32ShaHash(RAW_staticbuff: Test32ShaHash.RAW_staticbuff_zeroed())
-		try id.RAW_access_staticbuff_mutating({ ptr in
-			try hasher.finish(into: ptr)
-		})
+		var id = Test32ShaHash(RAW_staticbuff: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0))
+		try id.RAW_access_mutable(UnsafeMutableRawBufferPointer.self) { ptr in
+			try hasher.finish(into: ptr.baseAddress!)
+		}
 		
 		//MARK: - Testing that closing verify access when it's not open doesn't crash
 		try await openPGPConnection.closeVerifyAccess(pwType: .user)
@@ -95,8 +95,8 @@ struct Testing {
 		let signature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
 		
 		signature.withUnsafeBytes { sigPtr in
-			id.RAW_access { idPtr in
-				guard verify(signature: sigPtr.baseAddress!.assumingMemoryBound(to: UInt8.self), publicKey: key, message: idPtr) else {
+			id.RAW_access_immutable(UnsafeBufferPointer<UInt8>.self) { idPtr in
+				guard verify(signature: sigPtr.bindMemory(to: UInt8.self), publicKey: key, message: idPtr) else {
 					fatalError("Test Failed: Signature with OpenPGP generated key did not verify.")
 				}
 				logger.info("Test Passed: Signature with OpenPGP generated key verified. ✅")
@@ -114,7 +114,9 @@ struct Testing {
 		
 		//MARK: - Testing setting Ed25519 Key
 		try await openPGPConnection.openVerifyAccess(pwType: .admin, password: "12345678".data(using: .utf8)!)
-		let aliceStaticPrivateKey = MemoryGuarded<RAW_dh25519.PrivateKey>(RAW_decode: try! RAW_base64.decode("8DFnI7tPWLl4WmuEp4T5KVuKMW6iyjRdTb3IVaDe+kI="), count: 32)!
+		let aliceStaticPrivateKey = try! RAW_base64.decode("8DFnI7tPWLl4WmuEp4T5KVuKMW6iyjRdTb3IVaDe+kI=").withUnsafeBufferPointer { buf in
+			MemoryGuarded<RAW_dh25519.PrivateKey>(RAW_decode: UnsafeRawBufferPointer(buf))!
+		}
 		let (edPubKey, edPrivKey) = try generateKeys(secretKey: aliceStaticPrivateKey)
 		try await openPGPConnection.setEd25519Key(privateKey: edPrivKey, publicKey: edPubKey)
 		// Key import needs PW3 (admin); signing needs PW1 (user).
@@ -122,8 +124,8 @@ struct Testing {
 		let edSignature = try await openPGPConnection.computeDitigalSignature(hashedData: id)
 		
 		edSignature.withUnsafeBytes { sigPtr in
-			id.RAW_access { idPtr in
-				guard verify(signature: sigPtr.baseAddress!.assumingMemoryBound(to: UInt8.self), publicKey: edPubKey, message: idPtr) else {
+			id.RAW_access_immutable(UnsafeBufferPointer<UInt8>.self) { idPtr in
+				guard verify(signature: sigPtr.bindMemory(to: UInt8.self), publicKey: edPubKey, message: idPtr) else {
 					fatalError("Test Failed: Signature with custom ed25519 key did not verify.")
 				}
 				logger.info("Test Passed: Signature with custom ed25519 key verified. ✅")
