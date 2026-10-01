@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 import RAW
 
@@ -15,7 +14,7 @@ import RAW
 ///
 /// Returns the 64-byte hash from signing the message on status success (9000), else throws corresponding error.
 extension OpenPGPConnection {
-	public func computeDigitalSignature<DataType:RAW_accessible>(on card:TKSmartCard, hashedData:DataType) async throws -> Data {
+	public func computeDigitalSignature<DataType:RAW_accessible>(on card:SmartCard, hashedData:DataType) async throws -> Data {
 		var data = Data()
 		hashedData.RAW_access_immutable(UnsafeRawBufferPointer.self) { ptr in
 			data.append(contentsOf: ptr)

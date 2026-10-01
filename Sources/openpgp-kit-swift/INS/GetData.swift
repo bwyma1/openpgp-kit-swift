@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 
 /// Source: [https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf] Page 58
@@ -14,7 +13,7 @@ import Foundation
 ///
 /// Returns the data response on status success (9000), else throws corresponging error.
 extension OpenPGPConnection {
-	public func getData(on card:TKSmartCard, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Data {
+	public func getData(on card:SmartCard, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Data {
 		let apdu = APDU(cla: 0x00, ins: 0xCA, p1: P1, p2: P2, data: lcData, le: le)
 		
 		let response = try await card.transmit(apdu.serialize())

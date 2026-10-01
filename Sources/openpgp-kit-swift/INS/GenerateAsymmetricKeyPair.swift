@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 import RAW_dh25519
 import RAW_ed25519
@@ -32,7 +31,7 @@ public enum KeyPairParameter {
 /// - The public key(s) returned from reading the key.
 /// - Nil for unsuccessful generation or fetch.
 extension OpenPGPConnection {
-	public func generateAsymmetricKeyPair(on card:TKSmartCard, action: KeyPairParameter, crt: KeyPairCRT) async throws -> [PublicKey]? {
+	public func generateAsymmetricKeyPair(on card:SmartCard, action: KeyPairParameter, crt: KeyPairCRT) async throws -> [PublicKey]? {
 		let P1: UInt8 = action == .generate ? 0x80 : 0x81
 		switch crt {
 			case .digitalSignature:

@@ -1,5 +1,7 @@
-import CryptoTokenKit
 import Foundation
+#if canImport(CryptoTokenKit)
+import CryptoTokenKit
+#endif
 import Logging
 import RAW
 import RAW_sha1
@@ -24,11 +26,12 @@ public enum OpenPGPError: Error {
 	case failedToPutData
 	case failedToGetData
 	case failedToGetName
+	case unsupportedPlatform
 }
 
 public actor OpenPGPConnection {
 	let logger:Logger
-	private var card: TKSmartCard = TKSmartCard()
+	private var card: SmartCard = SmartCard()
 	public var isConnected:Bool { card.isValid }
 	
 	/// Initializer waits until there is a Yubikey connected to try and start the connection.
@@ -40,6 +43,7 @@ public actor OpenPGPConnection {
 	
 	/// Throws if no yubikey is connected or a card is not found.
 	public func connectToYubikey() async throws {
+#if canImport(CryptoTokenKit)
 		let manager = TKSmartCardSlotManager()
 
 		logger.trace("Attempting to find yubikey...")
@@ -55,11 +59,16 @@ public actor OpenPGPConnection {
 		}
 		self.card = card
 		try await card.beginSession()
+#else
+		logger.warning("Smartcard access is not supported on this platform (CryptoTokenKit unavailable).")
+		throw OpenPGPError.unsupportedPlatform
+#endif
 	}
 	
 	/// Waits until a yubikey is connected and a the card is found.
 	/// The function ends once the connection is made.
 	public func waitForYubikey(retryTime: Duration) async throws {
+#if canImport(CryptoTokenKit)
 		let manager = TKSmartCardSlotManager()
 		while true {
 			logger.trace("Attempting to find yubikey...")
@@ -83,6 +92,10 @@ public actor OpenPGPConnection {
 			try await card.beginSession()
 			break
 		}
+#else
+		logger.warning("Smartcard access is not supported on this platform (CryptoTokenKit unavailable).")
+		throw OpenPGPError.unsupportedPlatform
+#endif
 	}
 	
 	/// Called to actually open the OpenPGP application on the yubikey.

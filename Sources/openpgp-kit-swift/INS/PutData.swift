@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 
 /// Source: [https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf] Page 61
@@ -12,7 +11,7 @@ import Foundation
 ///
 /// Returns a Bool indicating whether or not the data was written.
 extension OpenPGPConnection {
-	public func putData(on card:TKSmartCard, extendedHeaderList:Bool = false, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Bool {
+	public func putData(on card:SmartCard, extendedHeaderList:Bool = false, P1:UInt8, P2:UInt8, lcData:Data?, le:[UInt8]?) async throws -> Bool {
 		let apdu = APDU(cla: 0x00, ins: extendedHeaderList ? 0xDB : 0xDA, p1: P1, p2: P2, data: lcData, le: le)
 		
 		let response = try await card.transmit(apdu.serialize())

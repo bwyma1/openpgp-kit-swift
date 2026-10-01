@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 
 public enum VerifyPWType {
@@ -22,7 +21,7 @@ public enum VerifyAction {
 ///
 /// Returns a Bool indicating the success of the command.
 extension OpenPGPConnection {
-	public func verify(on card:TKSmartCard, pwType:VerifyPWType, action:VerifyAction, password:Data?) async throws -> Bool {
+	public func verify(on card:SmartCard, pwType:VerifyPWType, action:VerifyAction, password:Data?) async throws -> Bool {
 		let P1:UInt8 = action == .startVerify ? 0x00 : 0xFF
 		let P2:UInt8 = pwType == .user ? 0x81 : 0x83
 		let apdu = APDU(cla: 0x00, ins: 0x20, p1: P1, p2: P2, data: password, le: nil)

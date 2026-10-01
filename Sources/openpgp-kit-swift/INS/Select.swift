@@ -1,4 +1,3 @@
-import CryptoTokenKit
 import Foundation
 
 /// Source: [https://gnupg.org/ftp/specs/OpenPGP-smart-card-application-3.4.pdf] Page 57
@@ -16,7 +15,7 @@ import Foundation
 ///
 /// Returns a Bool indicating whether or not the OpenPGP Application was successfully selected.
 extension OpenPGPConnection {
-	public func selectOpenPGP(on card:TKSmartCard) async throws -> Bool {
+	public func selectOpenPGP(on card:SmartCard) async throws -> Bool {
 		let apdu = APDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: Data([0xD2, 0x76, 0x00, 0x01, 0x24, 0x01]), le: nil)
 		
 		let response = try await card.transmit(apdu.serialize())
