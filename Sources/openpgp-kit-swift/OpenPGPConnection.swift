@@ -26,12 +26,11 @@ public enum OpenPGPError: Error {
 	case failedToPutData
 	case failedToGetData
 	case failedToGetName
-	case unsupportedPlatform
 }
 
 public actor OpenPGPConnection {
 	let logger:Logger
-	private var card: SmartCard = SmartCard()
+	private var card: SmartCard = UnconnectedSmartCard()
 	public var isConnected:Bool { card.isValid }
 	
 	/// Initializer waits until there is a Yubikey connected to try and start the connection.
@@ -57,11 +56,17 @@ public actor OpenPGPConnection {
 		guard let card = slot.makeSmartCard() else {
 			throw OpenPGPError.cardCreationFailed
 		}
-		self.card = card
-		try await card.beginSession()
+		let wrappedCard = AppleSmartCard(card)
+		self.card = wrappedCard
+		try await wrappedCard.beginSession()
 #else
-		logger.warning("Smartcard access is not supported on this platform (CryptoTokenKit unavailable).")
-		throw OpenPGPError.unsupportedPlatform
+		guard let readerName = try PCSCSmartCardLocator.preferredReader() else {
+			logger.warning("No smartcard reader detected. Is pcscd running?")
+			throw OpenPGPError.noYubikeyDetected
+		}
+		logger.trace("> Found yubikey: \(readerName)")
+		self.card = try PCSCSmartCard(readerName: readerName)
+		try await card.beginSession()
 #endif
 	}
 	
@@ -88,13 +93,21 @@ public actor OpenPGPConnection {
 				try? await Task.sleep(for: retryTime)
 				continue
 			}
-			self.card = card
-			try await card.beginSession()
+			let wrappedCard = AppleSmartCard(card)
+			self.card = wrappedCard
+			try await wrappedCard.beginSession()
 			break
 		}
 #else
-		logger.warning("Smartcard access is not supported on this platform (CryptoTokenKit unavailable).")
-		throw OpenPGPError.unsupportedPlatform
+		while true {
+			if let readerName = try? PCSCSmartCardLocator.preferredReader() {
+				logger.trace("> Found yubikey: \(readerName)")
+				self.card = try PCSCSmartCard(readerName: readerName)
+				try await card.beginSession()
+				break
+			}
+			try? await Task.sleep(for: retryTime)
+		}
 #endif
 	}
 	

@@ -15,8 +15,19 @@ A Swift package for interacting with the OpenPGP application on a YubiKey smart 
 
 ## Requirements
 
+### macOS
+
 - macOS 15 or later
-- Swift 6.2
+- Swift 6.3 or later
+- A YubiKey with the OpenPGP application (for runtime use)
+
+### Linux
+
+- Swift 6.3 or later
+- PC/SC support: `pcscd` plus the `libpcsclite` development headers
+  - Debian/Ubuntu: `sudo apt install pcscd libpcsclite-dev`
+  - Fedora/RHEL: `sudo dnf install pcsc-lite pcsc-lite-devel`
+- The `pcscd` daemon running (`sudo systemctl enable --now pcscd`)
 - A YubiKey with the OpenPGP application (for runtime use)
 
 ## Installation

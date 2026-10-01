@@ -1,40 +1,73 @@
 import Foundation
 
+/// Transport-independent handle to a smartcard.
+///
+/// Apple platforms back this with CryptoTokenKit's `TKSmartCard`; Linux backs it
+/// with a PC/SC connection (see ``PCSCSmartCard``). Protocol logic in the
+/// `INS/` layer only ever calls ``transmit(_:)``, so the two transports are
+/// drop-in interchangeable.
+public protocol SmartCardTransport: Sendable {
+	/// `true` when a card is present and usable.
+	var isValid: Bool { get }
+	/// Opens the card session (no-op for transports where the connection itself is the session).
+	func beginSession() async throws
+	/// Transmits an APDU and returns the raw card response, including status words.
+	func transmit(_ data: Data) async throws -> Data
+}
+
+/// The smartcard handle type used throughout the package's public API.
+public typealias SmartCard = any SmartCardTransport
+
 #if canImport(CryptoTokenKit)
 import CryptoTokenKit
 
-/// The smartcard handle used throughout the package.
-/// On Apple platforms this is CryptoTokenKit's `TKSmartCard`; on other platforms a
-/// build-only stub is used so the package still compiles without a smartcard stack.
-public typealias SmartCard = TKSmartCard
-
-#else
-
-/// Build-only stand-in for a smartcard handle on platforms without `CryptoTokenKit`.
+/// CryptoTokenKit-backed transport.
 ///
-/// The package compiles on Linux, but no card operations are possible: every
-/// interaction throws ``SmartCardError/unsupportedPlatform``.
-public struct SmartCard: Sendable {
-	/// Errors thrown by the platform stub.
-	public enum SmartCardError: Swift.Error {
-		/// CryptoTokenKit is unavailable on this platform.
-		case unsupportedPlatform
+/// `TKSmartCard` cannot conform to ``SmartCardTransport`` directly because its
+/// `beginSession()` returns a `Bool` (whether the session started); this wrapper
+/// adapts it and surfaces a failed session as ``OpenPGPError/failedToStartOpenPGP``.
+/// `@unchecked Sendable` because `TKSmartCard` is a non-Sendable ObjC class that
+/// is used single-threaded per connection, matching the pre-existing actor usage.
+public struct AppleSmartCard: SmartCardTransport, @unchecked Sendable {
+	private let card: TKSmartCard
+
+	public init(_ card: TKSmartCard) {
+		self.card = card
 	}
 
-	/// Always `false` on unsupported platforms.
-	public var isValid: Bool { false }
+	public var isValid: Bool {
+		card.isValid
+	}
 
-	public init() {}
-
-	/// Always throws ``SmartCardError/unsupportedPlatform``.
 	public func beginSession() async throws {
-		throw SmartCardError.unsupportedPlatform
+		let started = try await card.beginSession()
+		guard started else {
+			throw OpenPGPError.failedToStartOpenPGP
+		}
 	}
 
-	/// Always throws ``SmartCardError/unsupportedPlatform``.
 	public func transmit(_ data: Data) async throws -> Data {
-		throw SmartCardError.unsupportedPlatform
+		try await card.transmit(data)
 	}
 }
 
 #endif
+
+/// Sentinel transport used before a card has been connected.
+///
+/// This replaces the old "empty card" default on Apple platforms and keeps
+/// pre-connection misuse from being silently misrouted: any operation throws
+/// ``OpenPGPError/noYubikeyDetected``.
+public struct UnconnectedSmartCard: SmartCardTransport {
+	public var isValid: Bool { false }
+
+	public init() {}
+
+	public func beginSession() async throws {
+		throw OpenPGPError.noYubikeyDetected
+	}
+
+	public func transmit(_ data: Data) async throws -> Data {
+		throw OpenPGPError.noYubikeyDetected
+	}
+}
